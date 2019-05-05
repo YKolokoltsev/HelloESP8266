@@ -1,0 +1,2 @@
+project(HelloESP8266 C)
+set(CMAKE_C_STANDARD 99)
