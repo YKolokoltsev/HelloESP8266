@@ -13,9 +13,10 @@ endif()
 
 # ****************************************************************
 
-# Toolchain and SDK folders
+# Toolchain, SDK and esptool
 set(ESP_TOOLCHAIN_DIR ${ESP_OPEN_SDK_ROOT_DIR}/xtensa-lx106-elf)
 set(ESP_SDK_DIR ${ESP_OPEN_SDK_ROOT_DIR}/sdk)
+set(ESPTOOL "${ESP_OPEN_SDK_ROOT_DIR}/esptool/esptool.py")
 
 # *****************************************************************
 
@@ -26,13 +27,15 @@ set(CMAKE_SYSTEM_PROCESSOR ESP8266)
 # Setup compiler, linker, ...
 set(CMAKE_C_COMPILER ${ESP_TOOLCHAIN_DIR}/bin/xtensa-lx106-elf-gcc)
 
-# The location of target environment.
+# CMake uses the paths in this list as alternative roots to find filesystem
+# items with find_package(), find_library() etc.
 set(CMAKE_FIND_ROOT_PATH "${ESP_TOOLCHAIN_DIR}" "${ESP_SDK_DIR}")
 
-# Search programs in the host environment.
+# Search programs, headers and libraries in the host environment.
+# If set to ONLY, then only the roots in CMAKE_FIND_ROOT_PATH will be searched. If set to NEVER, then the
+# roots in CMAKE_FIND_ROOT_PATH will be ignored and only the host system root will be used. If set to BOTH, then
+# the host system paths and the paths in CMAKE_FIND_ROOT_PATH will be searched.
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
-
-# Search headers and libraries only in target environment.
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
@@ -57,7 +60,7 @@ endif ()
 
 # ****************************************************************
 
-set(CMAKE_EXE_LINKER_FLAGS "-L${ESP_OPEN_SDK_ROOT_DIR}/lib -T${ESP_SDK_DIR}/ld/eagle.app.v6.ld")
+set(CMAKE_EXE_LINKER_FLAGS "-L${ESP_OPEN_SDK_ROOT_DIR}/sdk/lib -T${ESP_SDK_DIR}/ld/eagle.app.v6.ld")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--no-check-sections")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -u call_user_start -Wl,-static -O2")
 
@@ -76,24 +79,15 @@ set(CMAKE_C_STANDARD_LIBRARIES "-lc -lgcc -lphy -lpp -lnet80211 -llwip -lwpa -lm
 
 # Genetare targets for creating firmwares and flashing.
 function(esp_gen_exec_targets TARGET_NAME)
-    set(ESP_TARGET_FW1 "${CMAKE_CURRENT_BINARY_DIR}/0x00000.bin")
-    set(ESP_TARGET_FW2 "${CMAKE_CURRENT_BINARY_DIR}/0x10000.bin")
+    #set(ESP_TARGET_FW1 "${CMAKE_CURRENT_BINARY_DIR}/0x00000.bin")
+    #set(ESP_TARGET_FW2 "${CMAKE_CURRENT_BINARY_DIR}/0x10000.bin")
 
     # Create ESP8266 binary files.
-    add_custom_command(
-            OUTPUT
-            ${ESP_TARGET_FW1} ${ESP_TARGET_FW2}
-            COMMAND
-            ${ESPTOOL_PATH} elf2image $<TARGET_FILE:${TARGET_NAME}> -o ${CMAKE_CURRENT_BINARY_DIR}/
-            DEPENDS
-            ${TARGET_NAME})
-
-    # elf2image has to be installed before? What is it for?
     add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
             COMMAND
-            ${ESPTOOL_PATH} elf2image $<TARGET_FILE:${TARGET_NAME}> -o ${CMAKE_CURRENT_BINARY_DIR}/
-            BYPRODUCTS
-            ${ESP_TARGET_FW1} ${ESP_TARGET_FW2})
+            ${ESPTOOL} elf2image $<TARGET_FILE:${TARGET_NAME}> -o ${CMAKE_CURRENT_BINARY_DIR}/)
+     #       BYPRODUCTS
+     #       ${ESP_TARGET_FW1} ${ESP_TARGET_FW2})
 endfunction()
 
 # ****************************************************************
@@ -101,7 +95,7 @@ endfunction()
 add_executable(${PROJECT_NAME} main.c)
 target_include_directories(${PROJECT_NAME} PUBLIC ${ESP_PROJECT_ROOT_DIR}/include)
 set_target_properties( ${PROJECT_NAME} PROPERTIES FRAMEWORK ON)
+
 esp_gen_exec_targets(${PROJECT_NAME})
 
-message(STATUS ">>>>>>>>> ${CMAKE_C_STANDARD_LIBRARIES}")
 
