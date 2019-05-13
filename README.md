@@ -10,6 +10,4 @@ NOTE: Due to complexity of manual compilation of the cross-compiler toolset, it 
 
 HINT:
 As long as here a esp-open-sdk is supposed to be inside a project tree, in CLion it should de excluded:
-project_tree->esp-open-sdk->Mark Directory as->Excluded
-that will speed-up indexing during each build
-
+project_tree->esp-open-sdk->Mark Directory as->Excluded. This operation will speed-up considerably an indexing process during each build.
