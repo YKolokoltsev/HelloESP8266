@@ -6,9 +6,16 @@ set(CMAKE_C_STANDARD 99)
 set(ESP_PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 message(STATUS "Your project root folder is: ${ESP_PROJECT_ROOT_DIR}")
 
-set(ESP_OPEN_SDK_ROOT_DIR ${ESP_PROJECT_ROOT_DIR}/esp-open-sdk)
-if(NOT EXISTS ${ESP_OPEN_SDK_ROOT_DIR})
-    message(FATAL_ERROR "Searching for esp-open-sdk folder failed")
+#set(ESP_OPEN_SDK_ROOT_DIR ${ESP_PROJECT_ROOT_DIR}/esp-open-sdk)
+#if(NOT EXISTS ${ESP_OPEN_SDK_ROOT_DIR})
+#    message(FATAL_ERROR "Searching for esp-open-sdk folder failed")
+#endif()
+
+find_program(Docker_EXECUTABLE docker)
+if(NOT Docker_EXECUTABLE)
+    message(FATAL_ERROR "Cannot find the docker executable!")
+else()
+    message(STATUS "Found docker executable: ${Docker_EXECUTABLE}")
 endif()
 
 # ****************************************************************
