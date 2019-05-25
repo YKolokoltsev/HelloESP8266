@@ -31,7 +31,7 @@ COPY --from=builder /tools/xtensa-lx106-elf /tools/xtensa-lx106-elf
 COPY --from=builder /tools/sdk /tools/sdk
 COPY --from=builder /tools/esptool /tools/esptool
 
-RUN yum -y install make autoconf automake libtool python2 pyserial which git cmake vim tree && \
+RUN yum -y install make autoconf automake libtool python2 pyserial which git cmake vim tree
 
 RUN groupadd builder && \
 useradd user -G builder && \
