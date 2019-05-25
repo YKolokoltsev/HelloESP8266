@@ -3,7 +3,7 @@
 ## STAGE 1: Build xtensa toolchain ( ~5 Gb )
 ##
 
-FROM fedora AS build-esp-open-sdk
+FROM fedora AS builder
 
 RUN yum -y upgrade
 RUN yum -y install make autoconf automake libtool gcc gcc-c++ \
@@ -13,25 +13,35 @@ RUN yum -y install make autoconf automake libtool gcc gcc-c++ \
 
 RUN useradd tools
 RUN mkdir /tools && chown -R tools:tools /tools
+
 USER tools
 RUN git clone --recursive https://github.com/pfalcon/esp-open-sdk.git /tools
 RUN cd /tools && make
+
 ######################################################################
 ##
 ## STAGE 2: This is the final image ( ~800 Mb ) - just binaries
 ##
 
-FROM fedora AS esp-open-sdk
+FROM fedora
 
-WORKDIR /opt/
+WORKDIR /opt/HelloESP8266
 
-COPY --from=0 /tools/xtensa-lx106-elf /tools/xtensa-lx106-elf
-COPY --from=0 /tools/sdk /tools/sdk
-COPY --from=0 /tools/esptool /tools/esptool
+COPY --from=builder /tools/xtensa-lx106-elf /tools/xtensa-lx106-elf
+COPY --from=builder /tools/sdk /tools/sdk
+COPY --from=builder /tools/esptool /tools/esptool
 
 RUN yum -y install make autoconf automake libtool python2 pyserial which git cmake vim tree && \
-git clone https://github.com/YKolokoltsev/HelloESP8266.git ./HelloESP8266 && \
-ln -s /tools /opt/HelloESP8266/esp-open-sdk && \
-mkdir /opt/HelloESP8266/build
 
-ENV PATH=/tools/xtensa-lx106-elf/bin:/bin:/usr/bin
+RUN groupadd builder && \
+useradd user -G builder && \
+chown -R user:builder /opt/HelloESP8266
+
+COPY ./startup-script /usr/local/bin/startup-script
+RUN chmod ugo+x /usr/local/bin/startup-script
+
+USER user
+
+CMD startup-script
+
+ENV PATH=/tools/xtensa-lx106-elf/bin:/bin:/usr/bin:/usr/local/bin

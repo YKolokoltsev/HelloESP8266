@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ ! -d "/opt/HelloESP8266/build" ]; then
+  mkdir -p /opt/HelloESP8266/build
+fi
+
+if [ ! -L /opt/HelloESP8266/esp-open-sdk ]; then
+  ln -s /tools /opt/HelloESP8266/esp-open-sdk
+fi
+
+/bin/bash
