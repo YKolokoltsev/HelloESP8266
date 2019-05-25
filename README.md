@@ -9,24 +9,17 @@ It is highly useful to build the toolchain within your linux-box. However, somet
 
 
 ```
-git clone https://github.com/YKolokoltsev/HelloESP8266.git
-cd HelloESP8266
-docker build --force-rm . && docker rmi --force build-esp-open-sdk
+git clone https://github.com/YKolokoltsev/HelloESP8266.git && cd HelloESP8266
+docker build -t esp-open-sdk docker
+docker system prune --force
 ```
 
-Creating of a docker image is a two stage process, and it requires at least 6 Gb of available space. The compilation takes a long time, however usually never fails.
+Creating of a docker image is a two stage process, and it requires at least 6 Gb of available space. The compilation takes a long time, however usually never fials.
 
-To build the project within docker container that was just created, first find that container ID with the command:
-
-```
-docker image ls
-```
-
-Than you can go to it's internal console and under the `/opt` folder execute:
+Than you can link a local HelloESP8266 folder where you have executed all previous commands as docker container volume. In this case it is important not to execute the `/bin/bash` command within your run because this command already exist in the Dockerfile and it is a `startup-script`.
 
 ```
-docker run -it <ID> bash
-cd HelloESP8266
+docker run -it -v `pwd`:/opt/HelloESP8266 esp-open-sdk
 cmake -S . -B build
 cd build && make
 ```
