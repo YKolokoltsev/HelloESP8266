@@ -3,7 +3,7 @@
 ## STAGE 1: Build xtensa toolchain ( ~5 Gb )
 ##
 
-FROM fedora
+FROM fedora AS build-esp-open-sdk
 
 RUN yum -y upgrade
 RUN yum -y install make autoconf automake libtool gcc gcc-c++ \
@@ -21,7 +21,7 @@ RUN cd /tools && make
 ## STAGE 2: This is the final image ( ~800 Mb ) - just binaries
 ##
 
-FROM fedora
+FROM fedora AS esp-open-sdk
 
 WORKDIR /opt/
 
