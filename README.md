@@ -39,5 +39,5 @@ This documentation is under the development and is far from it's end.
 
 
 Hint:
-As long as here `esp-open-sdk` folder is supposed to be inside of a project tree, in CLion it should de excluded:
+As long as `esp-open-sdk` folder is supposed to be inside of a project tree of the CLion IDE it is recommended to exlude it:
 project_tree->esp-open-sdk->Mark Directory as->Excluded. This operation will speed-up considerably automatic indexing process during each build.
