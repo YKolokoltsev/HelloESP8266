@@ -25,6 +25,7 @@ docker image ls
 Than you can go to it's internal console and under the `/opt` folder execute:
 
 ```
+docker run -it <ID> bash
 cd HelloESP8266
 cmake -S . -B build
 cd build && make
