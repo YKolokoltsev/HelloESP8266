@@ -1,14 +1,24 @@
 cmake_minimum_required(VERSION 3.5)
 
+# May be there are anu ideas?
+# https://github.com/dockcross/dockcross
+
 project(HelloESP8266 C)
 set(CMAKE_C_STANDARD 99)
 
 set(ESP_PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 message(STATUS "Your project root folder is: ${ESP_PROJECT_ROOT_DIR}")
 
-set(ESP_OPEN_SDK_ROOT_DIR ${ESP_PROJECT_ROOT_DIR}/esp-open-sdk)
-if(NOT EXISTS ${ESP_OPEN_SDK_ROOT_DIR})
-    message(FATAL_ERROR "Searching for esp-open-sdk folder failed")
+#set(ESP_OPEN_SDK_ROOT_DIR ${ESP_PROJECT_ROOT_DIR}/esp-open-sdk)
+#if(NOT EXISTS ${ESP_OPEN_SDK_ROOT_DIR})
+#    message(FATAL_ERROR "Searching for esp-open-sdk folder failed")
+#endif()
+
+find_program(Docker_EXECUTABLE docker)
+if(NOT Docker_EXECUTABLE)
+    message(FATAL_ERROR "Cannot find the docker executable!")
+else()
+    message(STATUS "Found docker executable: ${Docker_EXECUTABLE}")
 endif()
 
 # ****************************************************************
@@ -25,7 +35,7 @@ set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR ESP8266)
 
 # Setup compiler, linker, ...
-set(CMAKE_C_COMPILER ${ESP_TOOLCHAIN_DIR}/bin/xtensa-lx106-elf-gcc)
+set(CMAKE_C_COMPILER "/home/morrigan/CLionProjects/HelloESP8266/docker-lx-106-gcc.sh")
 
 # CMake uses the paths in this list as alternative roots to find filesystem
 # items with find_package(), find_library() etc.
@@ -97,5 +107,3 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${ESP_PROJECT_ROOT_DIR}/includ
 set_target_properties( ${PROJECT_NAME} PROPERTIES FRAMEWORK ON)
 
 esp_gen_exec_targets(${PROJECT_NAME})
-
-
