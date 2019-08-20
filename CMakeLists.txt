@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 
+# May be there are anu ideas?
+# https://github.com/dockcross/dockcross
+
 project(HelloESP8266 C)
 set(CMAKE_C_STANDARD 99)
 
