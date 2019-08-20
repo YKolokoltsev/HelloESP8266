@@ -9,10 +9,10 @@ set(CMAKE_C_STANDARD 99)
 set(ESP_PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 message(STATUS "Your project root folder is: ${ESP_PROJECT_ROOT_DIR}")
 
-#set(ESP_OPEN_SDK_ROOT_DIR ${ESP_PROJECT_ROOT_DIR}/esp-open-sdk)
-#if(NOT EXISTS ${ESP_OPEN_SDK_ROOT_DIR})
-#    message(FATAL_ERROR "Searching for esp-open-sdk folder failed")
-#endif()
+set(ESP_OPEN_SDK_ROOT_DIR ${ESP_PROJECT_ROOT_DIR}/esp-open-sdk)
+if(NOT EXISTS ${ESP_OPEN_SDK_ROOT_DIR})
+    message(FATAL_ERROR "Searching for esp-open-sdk folder failed")
+endif()
 
 find_program(Docker_EXECUTABLE docker)
 if(NOT Docker_EXECUTABLE)
@@ -35,7 +35,8 @@ set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR ESP8266)
 
 # Setup compiler, linker, ...
-set(CMAKE_C_COMPILER "/home/morrigan/CLionProjects/HelloESP8266/docker-lx-106-gcc.sh")
+# set(CMAKE_C_COMPILER "/home/morrigan/CLionProjects/HelloESP8266/docker-lx-106-gcc.sh")
+set(CMAKE_C_COMPILER "${ESP_TOOLCHAIN_DIR}/bin/xtensa-lx106-elf-gcc")
 
 # CMake uses the paths in this list as alternative roots to find filesystem
 # items with find_package(), find_library() etc.
@@ -56,6 +57,7 @@ set(CMAKE_C_OUTPUT_EXTENSION .o)
 set(CMAKE_C_FLAGS_INIT "-nostdlib")
 
 include_directories(${ESP_SDK_DIR}/include)
+include_directories(${ESP_SDK_DIR}/driver_lib/include/driver)
 
 # ***************************************************************
 
@@ -83,27 +85,33 @@ set(CMAKE_C_LINK_EXECUTABLE "${CMAKE_C_LINK_EXECUTABLE} -Wl,--start-group <OBJEC
 # ****************************************************************
 
 # Those libraries will be linked into every executable.
-set(CMAKE_C_STANDARD_LIBRARIES "-lc -lgcc -lphy -lpp -lnet80211 -llwip -lwpa -lmain")
+set(CMAKE_C_STANDARD_LIBRARIES "-lc -lgcc -lphy -lpp -lnet80211 -llwip -lwpa -lmain -ldriver")
+
+# ldriver -> uart (at least)
 
 # ****************************************************************
 
-# Genetare targets for creating firmwares and flashing.
-function(esp_gen_exec_targets TARGET_NAME)
-    #set(ESP_TARGET_FW1 "${CMAKE_CURRENT_BINARY_DIR}/0x00000.bin")
-    #set(ESP_TARGET_FW2 "${CMAKE_CURRENT_BINARY_DIR}/0x10000.bin")
+set(ESP_TARGET_FW1 "${CMAKE_BINARY_DIR}/0x00000.bin")
+set(ESP_TARGET_FW2 "${CMAKE_BINARY_DIR}/0x10000.bin")
 
-    # Create ESP8266 binary files.
+message(STATUS "CMAKE_BINARY_DIR: ${CMAKE_BINARY_DIR}")
+
+# Create binary image prepared for flashing
+function(create_image TARGET_NAME)
     add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
             COMMAND
-            ${ESPTOOL} elf2image $<TARGET_FILE:${TARGET_NAME}> -o ${CMAKE_CURRENT_BINARY_DIR}/)
-     #       BYPRODUCTS
-     #       ${ESP_TARGET_FW1} ${ESP_TARGET_FW2})
+            ${ESPTOOL} elf2image ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.out -o ${CMAKE_BINARY_DIR}/
+            BYPRODUCTS
+            ${ESP_TARGET_FW1} ${ESP_TARGET_FW2}
+    )
 endfunction()
 
 # ****************************************************************
 
-add_executable(${PROJECT_NAME} main.c)
-target_include_directories(${PROJECT_NAME} PUBLIC ${ESP_PROJECT_ROOT_DIR}/include)
-set_target_properties( ${PROJECT_NAME} PROPERTIES FRAMEWORK ON)
+add_custom_target(flash_chip
+        ${ESPTOOL} --port /dev/ttyUSB0 -b 74880 write_flash -ff 80m -fm dio
+        0x00000 ${ESP_TARGET_FW1}
+        0x10000 ${ESP_TARGET_FW2}
+        )
 
-esp_gen_exec_targets(${PROJECT_NAME})
+add_subdirectory(examples)

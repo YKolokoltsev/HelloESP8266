@@ -45,3 +45,7 @@ cd build && make
 ``` 
 
 If under the build folder have appeared two files: `0x00000.bin` and `0x10000.bin`, than the compilation has passed successfully. These files are the firmware of the esp8266 board, and you can upload them into the flash memory using `esptool.py` as it is described [here](https://github.com/espressif/esptool).
+
+### Misc
+
+CLion: Install Serial Port Monitor plugin to read custom debug messages using `os_printf` function: File->Settings->Plugins->Browse repositories->Serial; However be sure you turn off serial monitor each time before flash your chip.
