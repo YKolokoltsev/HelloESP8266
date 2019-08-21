@@ -13,7 +13,7 @@ static const int LED_GPIO = 2;
 static os_timer_t timer; //volatile
 
 void
-user_timer_interrupt(void *arg)
+timer_interrupt(void *arg)
 {
     //Do blinky stuff
     if (GPIO_REG_READ(GPIO_OUT_ADDRESS) & (1 << LED_GPIO))
@@ -39,6 +39,6 @@ user_init()
     gpio_output_set(0, 0, (1 << LED_GPIO), 0);
 
     // setup timer (500ms, repeating)
-    os_timer_setfn(&timer, (os_timer_func_t *)user_timer_interrupt, NULL);
+    os_timer_setfn(&timer, (os_timer_func_t *)timer_interrupt, NULL);
     os_timer_arm(&timer, 500, 1);
 }

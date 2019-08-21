@@ -11,13 +11,17 @@ static os_timer_t timer;
 typedef unsigned int uint;
 
 /**
+ * In this example we send some chip information over UART interface.
+ * This is a basic example that shell work, because this way we would
+ * have a feedback from the chip during another examples.
+ *
  * To be sure that flashing process over UART0 will not cross with
  * system serial monitor we send the same statistics each 2 seconds
  * using timer interrupt.
  */
 
 void
-user_timer_interrupt() {
+timer_interrupt() {
 
     uint32 heap_size = system_get_free_heap_size();
 
@@ -91,6 +95,6 @@ user_init() {
     wifi_set_opmode_current(NULL_MODE);
 
     // setup timer (2000ms, repeating)
-    os_timer_setfn(&timer, (os_timer_func_t *)user_timer_interrupt, NULL);
+    os_timer_setfn(&timer, (os_timer_func_t *)timer_interrupt, NULL);
     os_timer_arm(&timer, 2000, 1);
 }

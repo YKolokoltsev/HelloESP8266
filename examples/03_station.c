@@ -1,15 +1,21 @@
-#include <osapi.h>
-#include <user_interface.h>
-#include <smartconfig.h>
+/**
+ * In this example we try to connect to the Acess Point
+ * specifiyed by SSID and PASSWORD constants. Afterwords we send
+ * connection stats over UART0 interface.
+ */
 
 #define SSID "INFINITUMA8F2"
 #define PASSWORD "1837497823"
+
+#include <osapi.h>
+#include <user_interface.h>
+#include <smartconfig.h>
 
 static os_timer_t timer; //volatile
 struct station_config config;
 
 void
-user_timer_interrupt(void *arg)
+timer_interrupt(void *arg)
 {
     os_printf("Wi-Fi operationg mode: ");
     switch(wifi_get_opmode()){
@@ -60,7 +66,7 @@ user_init()
 
     // Setup unique station hostname based on it's chip ID
     char hostname[32];
-    memset(hostname, 0, sizeof(hostname));
+    os_memset(hostname, 0, sizeof(hostname));
     ets_sprintf(hostname, "ESP8266-%u",system_get_chip_id());
     wifi_station_set_hostname(hostname);
 
@@ -76,14 +82,14 @@ user_init()
      * will be set correctly.
      */
 
-    memset(&config, 0, sizeof(struct station_config));
-    memcpy(config.ssid, SSID, sizeof(SSID)-1);
-    memcpy(config.password, PASSWORD, sizeof(PASSWORD)-1);
+    os_memset(&config, 0, sizeof(struct station_config));
+    os_memcpy(config.ssid, SSID, sizeof(SSID)-1);
+    os_memcpy(config.password, PASSWORD, sizeof(PASSWORD)-1);
 
     wifi_station_set_config_current(&config);
     wifi_station_set_reconnect_policy(true);
 
     // Setup timer (2000ms, repeating)
-    os_timer_setfn(&timer, (os_timer_func_t *)user_timer_interrupt, NULL);
+    os_timer_setfn(&timer, (os_timer_func_t *)timer_interrupt, NULL);
     os_timer_arm(&timer, 2000, 1);
 }
