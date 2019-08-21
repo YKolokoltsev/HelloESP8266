@@ -36,7 +36,7 @@ user_timer_interrupt() {
     // System info.
     os_printf("Chip ID        : %d\n", system_get_chip_id());
     os_printf("CPU freq       : %d\n", system_get_cpu_freq());
-    os_printf("free heap size : %d\n", heap_size);
+    os_printf("Free heap size : %d\n", heap_size);
     os_printf("SDK version    : %s\n", system_get_sdk_version());
     os_printf("Soft AP MAC    : "MACSTR"\n", MAC2STR(soft_ap_mac));
     os_printf("Station MAC    : "MACSTR"\n", MAC2STR(station_mac));

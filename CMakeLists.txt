@@ -85,9 +85,7 @@ set(CMAKE_C_LINK_EXECUTABLE "${CMAKE_C_LINK_EXECUTABLE} -Wl,--start-group <OBJEC
 # ****************************************************************
 
 # Those libraries will be linked into every executable.
-set(CMAKE_C_STANDARD_LIBRARIES "-lc -lgcc -lphy -lpp -lnet80211 -llwip -lwpa -lmain -ldriver")
-
-# ldriver -> uart (at least)
+set(CMAKE_C_STANDARD_LIBRARIES "-lmain -lnet80211 -lwpa -lpp -lphy -lgcc -llwip -lc")
 
 # ****************************************************************
 
