@@ -1,7 +1,7 @@
 /**
  * In this example we try to connect to the Acess Point
  * specifiyed by SSID and PASSWORD constants. Afterwords we send
- * connection stats over UART0 interface.
+ * connection stats over UART0 interface periodically.
  */
 
 #define SSID "INFINITUMA8F2"
@@ -11,8 +11,20 @@
 #include <user_interface.h>
 #include <smartconfig.h>
 
-static os_timer_t timer; //volatile
-struct station_config config;
+volatile static os_timer_t timer;
+
+/*
+ * The "config" struct is used when we setup connection to the AP,
+ * but when connection was accepted by AP and established, this struct gets additional
+ * information. The moment when it happens is ruled by internal SDK interrupt,
+ * so this structure is volatile. It is static because we do not use it in any other C source file.
+ * Also C langauge standard say that struct variable name can cross with the names of another identifiers,
+ * by this reason we use a keyword "struct".
+ *
+ * Note: yes, everything is important with global variables, remember that!
+ */
+
+volatile static struct station_config config;
 
 void
 timer_interrupt(void *arg)
@@ -26,7 +38,7 @@ timer_interrupt(void *arg)
         default: os_printf("%s\n", "UNDEFINED"); break;
     }
 
-    wifi_station_get_config(&config);
+    wifi_station_get_config((struct station_config*)&config);
 
     os_printf("AP SSID: %s\n",SSID);
     os_printf("Password: %s\n",PASSWORD);
@@ -82,14 +94,30 @@ user_init()
      * will be set correctly.
      */
 
-    os_memset(&config, 0, sizeof(struct station_config));
-    os_memcpy(config.ssid, SSID, sizeof(SSID)-1);
-    os_memcpy(config.password, PASSWORD, sizeof(PASSWORD)-1);
+    os_memset((struct station_config*) &config, 0, sizeof(struct station_config));
 
-    wifi_station_set_config_current(&config);
+    // 'ssid' and 'password' are pointers! see it's definition in the user_interface.h
+    os_memcpy((void*)config.ssid, SSID, sizeof(SSID)-1);
+    os_memcpy((void*)config.password, PASSWORD, sizeof(PASSWORD)-1);
+
+    wifi_station_set_config_current((struct station_config*) &config);
     wifi_station_set_reconnect_policy(true);
 
     // Setup timer (2000ms, repeating)
-    os_timer_setfn(&timer, (os_timer_func_t *)timer_interrupt, NULL);
-    os_timer_arm(&timer, 2000, 1);
+    os_timer_setfn((os_timer_t*) &timer, (os_timer_func_t *)timer_interrupt, NULL);
+    os_timer_arm((os_timer_t*) &timer, 2000, 1);
 }
+
+/*
+ * TODO:
+ * 1. Change SSID and password constants into your AP.
+ *
+ * 2. Implement the wifi_event_cb(System_Event_t *event) interrupt function, reed
+ * the http://smallbits.marshall-tribe.net/blog/2016/05/21/esp8266-networking-basics article
+ * for the references.
+ *
+ * 3. Report different events over UART and measure when they happen. To get more error events
+ * modify SSID and password to be incorrect.
+ *
+ * Report the results and discuss them.
+ */

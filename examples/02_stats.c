@@ -80,9 +80,8 @@ timer_interrupt() {
 
 
 /**
- * The entry point to your program.
- *
- * Sets up UART and schedules call to user code.
+ * The entry point to your program:
+ * set up UART and schedules call to user code.
  */
 void ICACHE_FLASH_ATTR
 user_init() {
@@ -98,3 +97,22 @@ user_init() {
     os_timer_setfn(&timer, (os_timer_func_t *)timer_interrupt, NULL);
     os_timer_arm(&timer, 2000, 1);
 }
+
+/*
+ * TODO:
+ * UART interface is generally slow. Following the ESP-12F Datasheet it supports
+ * up to ~  4608000 bps (bits per second). Traditionally CPU's and other specific
+ * hardware, such as UART2USB and USB can support such speed as well.
+ *
+ * 1. Try to obtain the maximum transfer speed for our interface and measure it on
+ * the CPU side.
+ *
+ * 2. Synchronize your oscilloscope with the TX bus, and comment the packets being transmitted.
+ * Explain why those speeds are measured in bits per second and not in bytes.
+ *
+ * 3. Measure the maximum TX speed on your CPU.
+ *
+ * Make short report about the UART protocol, mention when it is better than the others
+ * when we are using ESP8266.
+ *
+ */
