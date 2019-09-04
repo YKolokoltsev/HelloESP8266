@@ -1,15 +1,30 @@
 /**
- * In this example we connect to the AP, and trying to send
- * UDP packets. The UDP protocol does not support acknowledgment
- * if the packet being sent was received by the other computer or not.
- * This protocol is faster than TCP, and is a good way to start with.
- * Also
+ * In this example we connect to AP, and periodically trying to send
+ * UDP packet by calling espconn_sendto. In the case if the packet was sent
+ * successfully, this function returns 0 and calls sent_cb.
+ *
+ * UDP protocol does not support acknowledgment if the packet being sent was
+ * received by the other computer or not. This protocol is faster than TCP,
+ * and is perfect for continuous data flows. It supposes data loss and packets
+ * rearrangement at the receiver. However it's usage require for some practice.
+ *
+ * When we call espconn_sendto it will put a packet into the output buffer of a WiFi module.
+ * If at this moment we call espconn_sendto again, the previous packet will be
+ * discarded and espconn_sendto will return an error. So, rising the
+ * frequecy of espconn_sendto will produce lowering of the traffic speed.
+ * Also, if we call espconn_sendto too slow (slower than the real
+ * communication speed) it will also lower communication speed. So there exist some optimal
+ * frequecy of the espconn_sendto calls, when average internal timeout of the
+ * WiFi module packet buffer would coincide with the period of espconn_sendto
+ * calls.
+ *
  */
 #define USE_US_TIMER
 
 #include <osapi.h>
 #include <user_interface.h>
 #include <espconn.h>
+#include <mem.h>
 
 //TODO: Read this!
 //http://smallbits.marshall-tribe.net/blog/2016/05/21/esp8266-networking-basics
@@ -18,78 +33,68 @@
 #define PASSWORD "1837497823"
 static const uint8 r_ip[4] = {192, 168, 1, 64};
 static const uint16 r_port = 1234;
-static uint8 DATA_BUF[] = "ABCD";
+static uint8* DATA_BUF;
+const static uint16_t DATA_BUF_LEN = 1024;
 
 volatile static struct station_config config;
 volatile static struct espconn conn;
 // esp_udp is a alias to the struct called _esp_udp, an alias is already an identifier in C language
 // so here is no "struct keyword"
 volatile static esp_udp udp_proto_tx;
-volatile uint32_t cnt_timer_delay_us = 50;
-volatile uint32_t cnt_timer_passed = 0;
-volatile uint32_t cnt_packets_sent = 0;
+volatile static os_timer_t timer;
+
+// statistics
+volatile static uint32_t cnt_tx_sent = 0;
+volatile static uint32_t cnt_timer = 0;
+#define UDP_FLOOD
+#include "common.c"
+// #define LIFE_HACK
 
 // ******************************************
 
-static os_timer_t timer; //volatile
-
-void udp_tx_data() {
-
-    switch(espconn_create((struct espconn*) &conn)){
-        // all fine, can send another packet.
-        // However, may be that timer was too slow -> decreasind timer delay.
-        case(0):{
-            espconn_sendto((struct espconn *) &conn, DATA_BUF, sizeof(DATA_BUF));
-            espconn_delete((struct espconn *) &conn);
-            cnt_timer_delay_us = cnt_timer_delay_us > 5 ? cnt_timer_delay_us-1 : 5;
-            os_timer_arm_us(&timer, cnt_timer_delay_us, false);
-            break;
-        }
-        // The data is transmitting at the moment, so that timer was too fast
-        // increasing timer delay
-        case(ESPCONN_ISCONN): {
-            cnt_timer_delay_us = cnt_timer_delay_us < 2000 ? cnt_timer_delay_us+1 : 2000;
-            os_timer_arm_us(&timer, cnt_timer_delay_us, false);
-            break;
-        }
-        case(ESPCONN_MEM): os_printf("ESPCONN_MEM\n"); break;
-        case(ESPCONN_ARG): os_printf("ESPCONN_ARG\n"); break;
-        default: os_printf("ESPCONN_UNDEF\n"); break;
-    }
-}
-
 /**
- * This function which will be called back when data are successfully sent.
+ * This function which is called by espconn_sendto when data was successfully sent.
+ * It's not an interrupt of the WiFi subsystem. For example it is impossible to
+ * call espconn_sendto from here, because it will produce recursion.
  *
  * @param arg pointer corresponding structure espconn
  */
 void
-sent_interrupt(void *arg){
-    cnt_packets_sent++;
+sent_cb(void *arg){
+    cnt_tx_sent++;
 }
 
 /**
- * The timer works as an UDP transmission watchdog
+ * The timer periodically calls espconn_sendto independently if
+ * this function succeeds or not. Also it prints some statisctics over
+ * UART0.
+ *
  * @param arg
  */
 void
-timer_cb(void *arg) {
-    //First print statistics:
-    cnt_timer_passed += cnt_timer_delay_us;
-    if(cnt_timer_passed >= 100000){
-        os_printf("Packets sent: %d. Current delay: %dus, Current time: %d\n",
-                cnt_packets_sent, cnt_timer_delay_us, cnt_timer_passed);
-        cnt_packets_sent = 0;
-        cnt_timer_passed = 0;
+soft_timer_cb(void *arg) {
+
+    cnt_timer++;
+
+    //Print statistics:
+    if(cnt_timer >= 5000){
+        print_statistics();
+        cnt_tx_sent = 0;
+        cnt_timer = 0;
     }
 
 
-    // Even do not try to do anything if we are disconnected from AP. Everything will
-    // repeat after automatic reconnect. However, if we are connected, we try to
-    // to transmit packet.
-    if(wifi_station_get_connect_status() == STATION_GOT_IP){
-        udp_tx_data();
-    }
+    //sending packet
+    uint32_t t = system_get_time();
+    sint8 res = espconn_send((struct espconn *) &conn, DATA_BUF, DATA_BUF_LEN);
+    uint32_t dt = system_get_time() - t;
+
+    collect_statistics(dt, res);
+
+#ifdef LIFE_HACK
+    os_timer_disarm((os_timer_t * ) & timer);
+    os_timer_arm_us((os_timer_t * ) & timer, 100, 1);
+#endif
 }
 
 LOCAL
@@ -97,19 +102,39 @@ void
 ICACHE_FLASH_ATTR
 wifi_event_cb(System_Event_t *event){
     if(event->event != EVENT_STAMODE_GOT_IP) return;
-    //start transmission in 1 sec
-    os_printf("Transmission will be restarted in 1 sec.\n");
-    os_timer_arm_us((os_timer_t*) &timer, 100000, false);
+
+    //create UDP connection, it is required just once
+    //the information that it is required to reconnect repeatingly
+    //over the internet is not true
+    if(espconn_create((struct espconn*) &conn) == 0){
+        os_printf("Transmission started 1 sec.\n");
+    }else{
+        os_printf("Could not create UDP connection.\n");
+    }
+
+    //start transmission flow, the minimum value is 100us
+    //for smaller values the chip will become unstable even
+    //if soft_timer_cb has no code inside
+    os_timer_arm_us((os_timer_t * ) & timer, 350, 1);
 }
 
 void
 ICACHE_FLASH_ATTR
 user_init() {
+
+    // Allocate some memory for the packet data (no data will be written,
+    // no matter what we transmit, can be zeroes)
+    DATA_BUF = os_malloc(DATA_BUF_LEN);
+
     // Setup Wi-Fi in a station-only current mode (do not update flash)
     // and say that we will reconnect if something
     wifi_set_opmode_current(STATION_MODE);
     wifi_station_set_reconnect_policy(true);
     wifi_set_event_handler_cb(wifi_event_cb);
+
+    // Setup timer, but not arm it
+    os_timer_setfn((os_timer_t*)&timer, soft_timer_cb, NULL);
+    system_timer_reinit();
 
     // Setup unique station hostname based on it's chip ID
     char hostname[32];
@@ -124,7 +149,7 @@ user_init() {
     conn.type = ESPCONN_UDP;
     conn.state = ESPCONN_NONE;
     conn.proto.udp = (esp_udp *) &udp_proto_tx;
-    espconn_regist_sentcb( (struct espconn *) &conn, sent_interrupt);
+    espconn_regist_sentcb( (struct espconn *) &conn, sent_cb);
 
     // Prepare AP data
     os_memset((struct station_config*) &config, 0, sizeof(struct station_config));
@@ -134,11 +159,6 @@ user_init() {
     // Connect to AP (after this we can wait for the EVENT_STAMODE_GOT_IP event).
     // At that event we can try to create an UDP connection.
     wifi_station_set_config_current((struct station_config*) &config);
-
-
-    // Setup timer just callback function for the timer, that one is constant
-    system_timer_reinit();
-    os_timer_setfn(&timer, (os_timer_func_t *) timer_cb, NULL);
 }
 
 /*

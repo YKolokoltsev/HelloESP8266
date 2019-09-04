@@ -1,6 +1,5 @@
 /**
- * Blink diode on the GPIO2 pin (correct for ESP-12 or ESP-12F boards). See ../C/01_blink.c for more basic
- * comments about the functionality. Here we concentrate on C++ features only.
+ * It is well known that software emulation is bad. Let's see how it works.... (compare software timer with hw timer)
  */
 
 
@@ -15,6 +14,11 @@
  */
 
 extern "C" {
+
+    //Software timer does not support us precision. Following documentation it shell have
+    //500us jitter between it's callback function calls. 
+    #define USE_US_TIMER
+
     #include <osapi.h>
     #include <gpio.h>
 }
@@ -46,6 +50,16 @@ user_init() {
     gpio_output_set(0, 0, (1 << LED_GPIO), 0);
 
     os_timer_setfn((os_timer_t *) &timer, (os_timer_func_t *) timer_interrupt, NULL);
-    os_timer_arm((os_timer_t * ) & timer, 500, 1);
+    system_timer_reinit();
+    
+    //theoretically shell be 1us timer, but it is not
+    os_timer_arm_us((os_timer_t * ) & timer, 1, 1);
 }
 }
+
+/*
+ * TODO:
+ * 1. Connect your oscilloscope to the pin and measure frequency and it's stability
+ * 2. Configure hw timer and do the same
+ * 3. When we use software timer and we we use hw timer?
+ */
