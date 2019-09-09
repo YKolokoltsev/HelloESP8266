@@ -117,15 +117,18 @@ enable_language(C CXX)
 set(ESP_TARGET_FW1 "${CMAKE_BINARY_DIR}/0x00000.bin")
 set(ESP_TARGET_FW2 "${CMAKE_BINARY_DIR}/0x10000.bin")
 
-message(STATUS "CMAKE_BINARY_DIR: ${CMAKE_BINARY_DIR}")
+message(STATUS "After any compilation the binaries appear in: ${CMAKE_BINARY_DIR}")
 
 # Create binary image prepared for flashing
 function(create_image TARGET_NAME)
     add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
             COMMAND
-            ${ESPTOOL} elf2image ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.out -o ${CMAKE_BINARY_DIR}/
-            BYPRODUCTS
-            ${ESP_TARGET_FW1} ${ESP_TARGET_FW2}
+                # A new cmake instance is used as a wrapper to modify PATH variable to the
+                # toolchain automaticaly. It is required by esptool.py script here.
+                ${CMAKE_COMMAND} -E env "PATH=$ENV{PATH}:${ESP_TOOLCHAIN_DIR}/bin"
+                ${ESPTOOL} elf2image ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}.out -o ${CMAKE_BINARY_DIR}/
+                BYPRODUCTS
+                ${ESP_TARGET_FW1} ${ESP_TARGET_FW2}
     )
 endfunction()
 
