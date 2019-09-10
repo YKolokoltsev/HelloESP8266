@@ -9,23 +9,36 @@ project(HelloESP8266 NONE)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 11)
 
-#set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(ESP_PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 message(STATUS "Your project root folder is: ${ESP_PROJECT_ROOT_DIR}")
 
-set(ESP_OPEN_SDK_ROOT_DIR ${ESP_PROJECT_ROOT_DIR}/esp-open-sdk)
-if(NOT EXISTS ${ESP_OPEN_SDK_ROOT_DIR})
-    message(FATAL_ERROR "Searching for esp-open-sdk folder failed")
+find_program(DOCKER_EXECUTABLE docker)
+
+if(EXISTS "${ESP_PROJECT_ROOT_DIR}/esp-open-sdk")
+    message(STATUS "Using local installation of the esp-open-sdk (default)")
+    set(ESP_OPEN_SDK_ROOT_DIR ${ESP_PROJECT_ROOT_DIR}/esp-open-sdk)
+elseif(EXISTS "/tools/xtensa-lx106-elf")
+    message(STATUS "Docker build enabled")
+    set(ESP_OPEN_SDK_ROOT_DIR /tools)
+elseif(DOCKER_EXECUTABLE)
+    message(STATUS "Local installation of the esp-open-sdk not found")
+    message(STATUS "Found docker executable: ${DOCKER_EXECUTABLE}")
+    message(STATUS "Rerunning CMake from within a docker")
+    get_filename_component(RELATIVE_CMAKE_BINARY_DIR ${CMAKE_BINARY_DIR} NAME_WE)
+    execute_process(
+            COMMAND
+            ${DOCKER_EXECUTABLE} run -v ${ESP_PROJECT_ROOT_DIR}:/opt/HelloESP8266 esp-open-sdk
+            cmake -S /opt/HelloESP8266 -B /opt/HelloESP8266/docker-${RELATIVE_CMAKE_BINARY_DIR}
+    )
+    message(STATUS "Configuring done within child process")
+    message(STATUS "Real build is configured within docker-${RELATIVE_CMAKE_BINARY_DIR} folder")
+    return()
+else()
+    message(FATAL_ERROR "Failed to find suitable esp-open-sdk toolchain nor docker image")
 endif()
 
 # TODO: Try that! https://www.jetbrains.com/help/clion/docker.html
-find_program(Docker_EXECUTABLE docker)
-if(NOT Docker_EXECUTABLE)
-    message(WARNING "Can not find docker executable, toolchain shell be installed locally")
-else()
-    message(STATUS "Found docker executable: ${Docker_EXECUTABLE}")
-endif()
 
 # ****************************************************************
 

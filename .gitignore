@@ -2,3 +2,4 @@
 esp-open-sdk
 build
 cmake-build-debug
+docker-*

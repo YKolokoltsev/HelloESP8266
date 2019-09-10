@@ -40,11 +40,11 @@ Than you can link a local HelloESP8266 folder where you have executed all previo
 
 ```
 docker run -it -v `pwd`:/opt/HelloESP8266 esp-open-sdk
-cmake -S . -B build
-cd build && make
+cmake -S . -B tmp-build
+make -C ./tmp-build/ c_01_blink
 ``` 
 
-If under the build folder have appeared two files: `0x00000.bin` and `0x10000.bin`, than the compilation has passed successfully. These files are the firmware of the esp8266 board, and you can upload them into the flash memory using `esptool.py` as it is described [here](https://github.com/espressif/esptool).
+After this run the `tmp-build` folder will be created within your project root. This folder will contain two files: `0x00000.bin` and `0x10000.bin`. In this case you can be sure that compilation has passed successfully. These binary files are the firmware for the esp8266 board that will blink it's LED. You can upload them manually into the flash memory using `esptool.py` as it is described [here](https://github.com/espressif/esptool).
 
 ### Misc
 
