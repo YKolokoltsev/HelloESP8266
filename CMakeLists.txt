@@ -3,8 +3,10 @@ cmake_minimum_required(VERSION 3.5)
 # May be there are anu ideas?
 # https://github.com/dockcross/dockcross
 
-#This is the cross-platform compilation. First we define compailers and their
-#parameters and at the end enable them. So here it is important to define a compiler as NONE.
+# Here we sugest to use C and C++ at the same time. However, if we put any compilers within a "project" statementt,
+# CMake will check the default compiler that will not be used for cross-platform compliation.
+# Therefore the only option here for compilers is "NONE"
+# Compiler check is moved to the "enable_language" statement at the end of this file.
 project(HelloESP8266 NONE)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_CXX_STANDARD 11)
@@ -13,32 +15,24 @@ set(CMAKE_CXX_STANDARD 11)
 set(ESP_PROJECT_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 message(STATUS "Your project root folder is: ${ESP_PROJECT_ROOT_DIR}")
 
-find_program(DOCKER_EXECUTABLE docker)
+# Prevent in source builds
+if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+    message(FATAL_ERROR "In-source builds not allowed. Run cmake -H . -B <build-filder>")
+endif ()
 
+# Check if this is a host or a docker build
 if(EXISTS "${ESP_PROJECT_ROOT_DIR}/esp-open-sdk")
-    message(STATUS "Using local installation of the esp-open-sdk (default)")
+    # When we can use local toolchain
+    message(STATUS "Using local installation of esp-open-sdk (default)")
     set(ESP_OPEN_SDK_ROOT_DIR ${ESP_PROJECT_ROOT_DIR}/esp-open-sdk)
 elseif(EXISTS "/tools/xtensa-lx106-elf")
-    message(STATUS "Docker build enabled")
+    # When this script is forked from docker
     set(ESP_OPEN_SDK_ROOT_DIR /tools)
-elseif(DOCKER_EXECUTABLE)
-    message(STATUS "Local installation of the esp-open-sdk not found")
-    message(STATUS "Found docker executable: ${DOCKER_EXECUTABLE}")
-    message(STATUS "Rerunning CMake from within a docker")
-    get_filename_component(RELATIVE_CMAKE_BINARY_DIR ${CMAKE_BINARY_DIR} NAME_WE)
-    execute_process(
-            COMMAND
-            ${DOCKER_EXECUTABLE} run -v ${ESP_PROJECT_ROOT_DIR}:/opt/HelloESP8266 esp-open-sdk
-            cmake -S /opt/HelloESP8266 -B /opt/HelloESP8266/docker-${RELATIVE_CMAKE_BINARY_DIR}
-    )
-    message(STATUS "Configuring done within child process")
-    message(STATUS "Real build is configured within docker-${RELATIVE_CMAKE_BINARY_DIR} folder")
-    return()
 else()
-    message(FATAL_ERROR "Failed to find suitable esp-open-sdk toolchain nor docker image")
+    # Try to fork from docker (see ./docker/CMakeLists.txt for details)
+    include("${ESP_PROJECT_ROOT_DIR}/docker/CMakeLists.txt")
+    return()
 endif()
-
-# TODO: Try that! https://www.jetbrains.com/help/clion/docker.html
 
 # ****************************************************************
 
@@ -129,8 +123,6 @@ enable_language(C CXX)
 
 set(ESP_TARGET_FW1 "${CMAKE_BINARY_DIR}/0x00000.bin")
 set(ESP_TARGET_FW2 "${CMAKE_BINARY_DIR}/0x10000.bin")
-
-message(STATUS "After any compilation the binaries appear in: ${CMAKE_BINARY_DIR}")
 
 # Create binary image prepared for flashing
 function(create_image TARGET_NAME)
