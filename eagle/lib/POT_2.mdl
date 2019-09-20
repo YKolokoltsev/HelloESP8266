@@ -1,0 +1,9 @@
+**********************
+* Autodesk EAGLE - SPICE Model File
+* Author: Yevgeniy Kolokoltsev
+* Date: 19/09/2009
+**********************
+.SUBCKT POT_2 A S E
+    RT S E {POT_2_VAL*(1-POT_2_SET)+.001}
+    RB A S {POT_2_VAL*POT_2_SET+.001}
+.ENDS subnam
