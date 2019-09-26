@@ -3,7 +3,7 @@
 * Author: Yevgeniy Kolokoltsev
 * Date: 19/09/2009
 **********************
-.SUBCKT POT_1 A S E
-    RT S E {POT_1_VAL*(1-POT_1_SET)+.001}
-    RB A S {POT_1_VAL*POT_1_SET+.001}
-.ENDS POT_1
+.SUBCKT PRESET_1 A S E
+    RT S E {PRESET_1_VAL*(1-PRESET_1_SET)+.001}
+    RB A S {PRESET_1_VAL*PRESET_1_SET+.001}
+.ENDS PRESET_1
