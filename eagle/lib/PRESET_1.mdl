@@ -1,9 +1,0 @@
-**********************
-* Autodesk EAGLE - SPICE Model File
-* Author: Yevgeniy Kolokoltsev
-* Date: 19/09/2009
-**********************
-.SUBCKT PRESET_1 A S E
-    RT S E {PRESET_1_VAL*(1-PRESET_1_SET)+.001}
-    RB A S {PRESET_1_VAL*PRESET_1_SET+.001}
-.ENDS PRESET_1
