@@ -104,25 +104,26 @@ wifi_event_cb(System_Event_t *event){
     if(event->event != EVENT_STAMODE_GOT_IP) return;
 
     //create UDP connection, it is required just once
-    //the information that it is required to reconnect repeatingly
+    //the information that it is required to reconnect repeatedly
     //over the internet is not true
     if(espconn_create((struct espconn*) &conn) == 0){
-        os_printf("Transmission started 1 sec.\n");
+        os_printf("Starting transmission.\n");
+
+        //start transmission flow, the minimum value is 100us
+        //for smaller values the chip will become unstable even
+        //if soft_timer_cb has no code inside
+        os_timer_arm_us((os_timer_t * ) & timer, 350, 1);
+
     }else{
         os_printf("Could not create UDP connection.\n");
     }
-
-    //start transmission flow, the minimum value is 100us
-    //for smaller values the chip will become unstable even
-    //if soft_timer_cb has no code inside
-    os_timer_arm_us((os_timer_t * ) & timer, 350, 1);
 }
 
 void
 ICACHE_FLASH_ATTR
 user_init() {
 
-    // Allocate some memory for the packet data (no data will be written,
+    // Allocate memory for the packet data (no data will be written,
     // no matter what we transmit, can be zeroes)
     DATA_BUF = os_malloc(DATA_BUF_LEN);
 
@@ -132,7 +133,7 @@ user_init() {
     wifi_station_set_reconnect_policy(true);
     wifi_set_event_handler_cb(wifi_event_cb);
 
-    // Setup timer, but not arm it
+    // Setup timer, but not arm it (see wifi_event_cb)
     os_timer_setfn((os_timer_t*)&timer, soft_timer_cb, NULL);
     system_timer_reinit();
 
@@ -142,7 +143,7 @@ user_init() {
     ets_sprintf(hostname, "ESP8266-%u", system_get_chip_id());
     wifi_station_set_hostname(hostname);
 
-    // Prepare data for the UDP connection
+    // Configure UDP connection
     os_memcpy((void*)udp_proto_tx.remote_ip, r_ip, 4);
     udp_proto_tx.remote_port = r_port;
 
@@ -151,7 +152,7 @@ user_init() {
     conn.proto.udp = (esp_udp *) &udp_proto_tx;
     espconn_regist_sentcb( (struct espconn *) &conn, sent_cb);
 
-    // Prepare AP data
+    // AP to which we are connecting as a station (regular client WiFi)
     os_memset((struct station_config*) &config, 0, sizeof(struct station_config));
     os_memcpy((void*)config.ssid, SSID, sizeof(SSID) - 1);
     os_memcpy((void*)config.password, PASSWORD, sizeof(PASSWORD) - 1);

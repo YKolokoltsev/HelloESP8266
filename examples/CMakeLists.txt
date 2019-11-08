@@ -1,7 +1,6 @@
 add_executable(c_01_blink 01_blink.c)
 create_image(c_01_blink)
 
-
 add_executable(c_02_stats 02_stats.c)
 create_image(c_02_stats)
 
@@ -10,3 +9,6 @@ create_image(c_03_station)
 
 add_executable(c_04_udp_flood 04_udp_flood.c)
 create_image(c_04_udp_flood)
+
+add_executable(c_05_adc 05_adc.c)
+create_image(c_05_adc)
