@@ -36,7 +36,6 @@ execute_process(
         cmake -S /opt/HelloESP8266 -B /opt/HelloESP8266/docker-${BINARY_DIR_NAME}
 )
 
-
 message(STATUS "Docker configuring done")
 message(STATUS "Main build folder is now: docker-${BINARY_DIR_NAME}")
 

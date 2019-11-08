@@ -3,3 +3,5 @@ esp-open-sdk
 build
 cmake-build-debug
 docker-*
+
+eagle/boards/dc_amp_1volt/dc_amp_1volt.b\#*
