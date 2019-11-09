@@ -61,5 +61,5 @@ user_init() {
  * TODO:
  * 1. Connect your oscilloscope to the pin and measure frequency and it's stability
  * 2. Configure hw timer and do the same
- * 3. When we use software timer and we we use hw timer?
+ * 3. When we do use software timer and we we use hw timer?
  */
