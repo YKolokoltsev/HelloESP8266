@@ -100,3 +100,150 @@ print_statistics(){
 }
 
 #endif
+
+#ifdef DEBUG_WIFI_EVENT
+void debug_wifi_event(uint32 event){
+    switch(event){
+        case (EVENT_STAMODE_CONNECTED):
+            os_printf("*** wifi_event_cb : EVENT_STAMODE_CONNECTED\n");
+            break;
+        case (EVENT_STAMODE_DISCONNECTED):
+            os_printf("*** wifi_event_cb : EVENT_STAMODE_DISCONNECTED\n");
+            break;
+        case (EVENT_STAMODE_AUTHMODE_CHANGE):
+            os_printf("*** wifi_event_cb : EVENT_STAMODE_AUTHMODE_CHANGE\n");
+            break;
+        case (EVENT_STAMODE_GOT_IP):
+            os_printf("*** wifi_event_cb : EVENT_STAMODE_GOT_IP\n");
+            break;
+        case (EVENT_STAMODE_DHCP_TIMEOUT):
+            os_printf("*** wifi_event_cb : EVENT_STAMODE_DHCP_TIMEOUT\n");
+            break;
+        case (EVENT_SOFTAPMODE_STACONNECTED):
+            os_printf("*** wifi_event_cb : EVENT_SOFTAPMODE_STACONNECTED\n");
+            break;
+        case (EVENT_SOFTAPMODE_STADISCONNECTED):
+            os_printf("*** wifi_event_cb : EVENT_SOFTAPMODE_STADISCONNECTED\n");
+            break;
+        case (EVENT_SOFTAPMODE_PROBEREQRECVED):
+            os_printf("*** wifi_event_cb : EVENT_SOFTAPMODE_PROBEREQRECVED\n");
+            break;
+        case (EVENT_OPMODE_CHANGED):
+            os_printf("*** wifi_event_cb : EVENT_OPMODE_CHANGED\n");
+            break;
+        case (EVENT_MAX):
+            os_printf("*** wifi_event_cb : EVENT_MAX\n");
+            break;
+        default:
+            os_printf("*** wifi_event_cb : UNKNOWN\n");
+            break;
+    }
+}
+#endif
+
+#ifdef DEBUG_ESPCONN
+
+void debug_espconn(struct espconn* p_conn){
+
+    switch(p_conn->type){
+        case(ESPCONN_INVALID):
+            os_printf("*** espconn.type: ESPCONN_INVALID\n");
+            break;
+        case(ESPCONN_TCP):
+            os_printf("*** espconn.type: ESPCONN_TCP\n");
+            break;
+        case(ESPCONN_UDP):
+            os_printf("*** espconn.type: ESPCONN_UDP\n");
+            break;
+        default:
+            os_printf("*** espconn.type: UNKNOWN\n");
+            break;
+    }
+
+    switch(p_conn->state){
+        case(ESPCONN_NONE):
+            os_printf("*** espconn.state: ESPCONN_NONE\n");
+            break;
+        case(ESPCONN_WAIT):
+            os_printf("*** espconn.state: ESPCONN_WAIT\n");
+            break;
+        case(ESPCONN_LISTEN):
+            os_printf("*** espconn.state: ESPCONN_LISTEN\n");
+            break;
+        case(ESPCONN_CONNECT):
+            os_printf("*** espconn.state: ESPCONN_CONNECT\n");
+            break;
+        case(ESPCONN_WRITE):
+            os_printf("*** espconn.state: ESPCONN_WRITE\n");
+            break;
+        case(ESPCONN_READ):
+            os_printf("*** espconn.state: ESPCONN_READ\n");
+            break;
+        case(ESPCONN_CLOSE):
+            os_printf("*** espconn.state: ESPCONN_CLOSE\n");
+            break;
+        default:
+            os_printf("*** espconn.state: UNKNOWN\n");
+            break;
+    }
+
+    if(p_conn->type == ESPCONN_UDP){
+        os_printf("*** udp local:  %d.%d.%d.%d : %d\n", IP2STR(p_conn->proto.udp->local_ip),
+                p_conn->proto.udp->local_port);
+        os_printf("*** udp remote: %d.%d.%d.%d : %d\n", IP2STR(p_conn->proto.udp->remote_ip),
+                p_conn->proto.udp->remote_port);
+    }
+
+    if(p_conn->type == ESPCONN_TCP){
+        os_printf("*** tcp local:  %d.%d.%d.%d : %d\n", IP2STR(p_conn->proto.tcp->local_ip),
+                p_conn->proto.tcp->local_port);
+        os_printf("*** tcp remote: %d.%d.%d.%d : %d\n", IP2STR(p_conn->proto.tcp->remote_ip),
+                p_conn->proto.tcp->remote_port);
+
+        if(p_conn->proto.tcp->connect_callback){
+            os_printf("*** tcp connect_callback: yes\n");
+        }else{
+            os_printf("*** tcp connect_callback: no\n");
+        }
+
+        if(p_conn->proto.tcp->reconnect_callback){
+            os_printf("*** tcp reconnect_callback: yes\n");
+        }else{
+            os_printf("*** tcp reconnect_callback: no\n");
+        }
+
+        if(p_conn->proto.tcp->disconnect_callback){
+            os_printf("*** tcp disconnect_callback: yes\n");
+        }else{
+            os_printf("*** tcp disconnect_callback: no\n");
+        }
+
+        if(p_conn->proto.tcp->write_finish_fn){
+            os_printf("*** tcp write_finish_fn: yes\n");
+        }else{
+            os_printf("*** tcp write_finish_fn: no\n");
+        }
+    }
+
+    if(p_conn->recv_callback){
+        os_printf("*** conn recv_callback: yes\n");
+    }else{
+        os_printf("*** conn recv_callback: no\n");
+    }
+
+    if(p_conn->sent_callback){
+        os_printf("*** conn sent_callback: yes\n");
+    }else{
+        os_printf("*** conn sent_callback: no\n");
+    }
+
+    os_printf("*** espconn.link_cnt: %d\n", p_conn->link_cnt);
+
+    if(p_conn->reverse){
+        os_printf("*** conn reverse: yes\n");
+    }else{
+        os_printf("*** conn reverse: no\n");
+    }
+}
+
+#endif
