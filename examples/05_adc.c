@@ -13,7 +13,9 @@
  * continuous mode).
  *
  * In the case of triggered mode the system_adc_read_fast shell be used. It will be discussed
- * in the future examples.
+ * in the future examples. For the sync sampling an external ADC chip is required. ESP8266
+ * SPI interface can support high speeds, and in the case of compression potentially can show
+ * interesting results in continuous mode.
  */
 
 #define USE_US_TIMER
